@@ -26,9 +26,5 @@
       "src": "/(.*)",
       "dest": "certificate_app/wsgi.py"
     }
-  ],
-  "static": {
-    "source": "/static",
-    "destination": "/staticfiles_build"
-  }
+  ]
 }
