@@ -150,12 +150,15 @@ EMAIL_HOST_PASSWORD = 'pajd bbet atzc ijhf'  # Use the generated password here
 
 
 
+# STATIC_URL = '/static/'
+
+# # Location where static files will be stored before deployment
+# STATICFILES_DIRS = [
+#     os.path.join(BASE_DIR, "static"),
+# ]
+
+# # Directory where static files will be collected during the build process
+# STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles_build')
+
 STATIC_URL = '/static/'
-
-# Location where static files will be stored before deployment
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "static"),
-]
-
-# Directory where static files will be collected during the build process
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles_build')
+STATIC_ROOT = BASE_DIR / 'staticfiles'
