@@ -119,8 +119,7 @@ def upload_certificate(request):
 #         'certificate_height': certificate_height
 #     })
 
-import base64
-import fitz  # PyMuPDF
+# 
 
 def set_coordinates(request):
     session_id = get_session_id(request)
