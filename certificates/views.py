@@ -15,7 +15,6 @@ import fitz  # PyMuPDF
 import os
 from django.conf import settings
 
-
 def get_session_id(request):
     """Ensure a unique session ID exists for the user."""
     if not request.session.session_key:
@@ -120,7 +119,8 @@ def upload_certificate(request):
 #         'certificate_height': certificate_height
 #     })
 
-# 
+import base64
+import fitz  # PyMuPDF
 
 def set_coordinates(request):
     session_id = get_session_id(request)
