@@ -151,10 +151,6 @@ EMAIL_HOST_PASSWORD = 'pajd bbet atzc ijhf'  # Use the generated password here
 
 
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-
-
-STATIC_URL = '/static/'
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "static"),
-]
+STATIC_URL = 'static/'
+STATICFILES_DIRS =[os.path.join(BASE_DIR,'static')]
+STATIC_ROOT = os.path.join(BASE_DIR,'staticfiles_build','static')
