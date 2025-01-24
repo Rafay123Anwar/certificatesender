@@ -141,6 +141,9 @@
             form.classList.add('was-validated'); // Show validation feedback if the form is invalid
         }
     });
+    document.getElementById('upload-form').addEventListener('submit', function() {
+        document.querySelector('button[type="submit"]').disabled = true;
+    });
 </script>
 
 </body>
