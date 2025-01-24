@@ -60,7 +60,7 @@
                 {% csrf_token %}
                 <div class="mb-3">
                     <label for="file" class="form-label fw-bold">Upload CSV File</label>
-                    <input type="file" name="file" id="file" class="form-control" accept=".csv" required>
+                    <input type="file" name="file" id="file" class="form-control" accept=".csv, .xls, .xlsx, .xlsm, .xlsb" required>
                     <small class="text-muted d-block mt-1">Accepted format: .csv</small>
                 </div>
                 <button type="submit" class="btn btn-primary w-100">Upload</button>
