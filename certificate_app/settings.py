@@ -53,6 +53,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    
 ]
 
 ROOT_URLCONF = 'certificate_app.urls'
@@ -91,9 +92,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',  # Use PostgreSQL database engine
         'NAME': 'postgres',                        # Database name
-        'USER': 'postgres.lmhrtekbnzosmzyxcwth',                        # Username
-        'PASSWORD': 'ncisgYrJL8rf1IQ2',            # Password
-        'HOST': 'aws-0-ap-southeast-1.pooler.supabase.com',  # Host
+        'USER': 'postgres.bqhxsxhzdgaiqzbvhjxf',                        # Username
+        'PASSWORD': 'TgrK6hPlWtsNcmEB',            # Password
+        'HOST': 'aws-0-us-west-1.pooler.supabase.com',  # Host
         'PORT': '6543',                            # Port
     }
 }
@@ -140,13 +141,6 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# EMAIL_HOST = 'smtp.gmail.com'
-# EMAIL_PORT = 587
-# EMAIL_USE_TLS = True
-# EMAIL_HOST_USER = 'rafayanwer786@gmail.com'
-# EMAIL_HOST_PASSWORD = 'pajd bbet atzc ijhf'  # Use the generated password here
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
