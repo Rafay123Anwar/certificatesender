@@ -706,15 +706,17 @@ from django.core.mail import EmailMessage
 from django.http import HttpResponse
 from .models import EmailNameData, Certificate, Coordinate
 from .forms import UploadEmailFileForm, UploadCertificateForm
-import io
-import base64
-import fitz  # PyMuPDF
+from reportlab.pdfgen import canvas
+from PyPDF2 import PdfReader, PdfWriter
+from io import BytesIO
+import pandas as pd
 import os
 from django.conf import settings
-import pandas as pd
 from django.db import transaction
 from concurrent.futures import ThreadPoolExecutor
 import csv
+import fitz
+import base64
 
 def get_session_id(request):
     """Ensure a unique session ID exists for the user."""
@@ -754,7 +756,6 @@ def upload_email_file(request):
                     with transaction.atomic():
                         EmailNameData.objects.bulk_create(rows)
             except Exception as e:
-                print(f"Error processing file: {e}")
                 return HttpResponse("An error occurred while processing the file.", status=500)
 
             return redirect('upload_certificate')
@@ -776,7 +777,6 @@ def upload_certificate(request):
                     Certificate.objects.create(file=file.read(), session_id=session_id)
                 return redirect('set_coordinates')
             except Exception as e:
-                print(f"Error saving certificate: {e}")
                 return HttpResponse("An error occurred while uploading the certificate.", status=500)
     else:
         form = UploadCertificateForm()
@@ -804,9 +804,6 @@ def set_coordinates(request):
         certificate_height = pix.height
     except Certificate.DoesNotExist:
         return HttpResponse("Certificate not found for this session.", status=404)
-    except Exception as e:
-        print(f"Error processing certificate: {e}")
-        return HttpResponse("An error occurred while processing the certificate.", status=500)
 
     if request.method == 'POST':
         try:
@@ -826,7 +823,6 @@ def set_coordinates(request):
                 )
             return redirect('send_emails')
         except Exception as e:
-            print(f"Error saving coordinates: {e}")
             return HttpResponse("An error occurred while saving the coordinates.", status=500)
 
     return render(request, 'set_coordinates.html', {
@@ -842,32 +838,33 @@ def hex_to_rgb(hex_color):
     return tuple(int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
 
 
-def add_name_to_certificate(certificate_binary, name, x, y, font_size, font_color, font_name="MonteCarlo"):
-    """Add a name to a certificate PDF at specified coordinates using fitz (PyMuPDF)."""
+def add_name_to_certificate(certificate_binary, name, x, y, font_size, font_color, font_name="Helvetica"):
+    """Add a name to a certificate PDF at specified coordinates."""
     try:
-        # Create the PDF for the overlay
-        font_path = os.path.join(settings.BASE_DIR, "static", "fonts", "MonteCarlo-Regular.ttf")
-        # Use default font if custom font is not available
-        font_name = font_name if os.path.exists(font_path) else "Helvetica"
+        reader = PdfReader(BytesIO(certificate_binary))
+        writer = PdfWriter()
 
-        # Open the original certificate using fitz
-        pdf_document = fitz.open(stream=certificate_binary, filetype="pdf")
-        page = pdf_document[0]
+        # Create a new PDF for adding the name
+        packet = BytesIO()
+        can = canvas.Canvas(packet, pagesize=(reader.pages[0].mediaBox[2], reader.pages[0].mediaBox[3]))
+        can.setFont(font_name, font_size)
+        can.setFillColorRGB(*[c / 255 for c in font_color])
+        can.drawString(x, y, name)
+        can.save()
+        packet.seek(0)
 
-        # Prepare the overlay text
-        overlay_pdf = fitz.open()
-        overlay_page = overlay_pdf.new_page(width=page.rect.width, height=page.rect.height)
-        overlay_page.insert_text((x, y), name, fontsize=font_size, color=fitz.utils.rgb_to_string(hex_to_rgb(font_color)))
+        # Overlay the text onto the original PDF
+        overlay_pdf = PdfReader(packet)
+        page = reader.pages[0]
+        page.merge_page(overlay_pdf.pages[0])
 
-        # Merge the overlay onto the original certificate
-        page.show_pdf_page(page.rect, overlay_pdf, 0)
-
-        # Save the modified PDF
-        output = io.BytesIO()
-        pdf_document.save(output)
+        # Save the output
+        output = BytesIO()
+        writer.add_page(page)
+        writer.write(output)
         return output.getvalue()
     except Exception as e:
-        print(f"Error adding name to certificate with fitz: {e}")
+        print(f"Error adding name to certificate: {e}")
         raise
 
 
