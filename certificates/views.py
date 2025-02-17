@@ -701,22 +701,23 @@
 
 
 
+import io
+import csv
+import base64
 from django.shortcuts import render, redirect
 from django.core.mail import EmailMessage
 from django.http import HttpResponse
-from .models import EmailNameData, Certificate, Coordinate
-from .forms import UploadEmailFileForm, UploadCertificateForm
-from reportlab.pdfgen import canvas
-from PyPDF2 import PdfReader, PdfWriter
+from django.db import transaction
+from PIL import Image, ImageDraw, ImageFont
+from pdf2image import convert_from_path
 from io import BytesIO
-import pandas as pd
 import os
 from django.conf import settings
-from django.db import transaction
+from .models import EmailNameData, Certificate, Coordinate
+from .forms import UploadEmailFileForm, UploadCertificateForm
 from concurrent.futures import ThreadPoolExecutor
-import csv
-import fitz
-import base64
+import pandas as pd
+
 
 def get_session_id(request):
     """Ensure a unique session ID exists for the user."""
@@ -756,6 +757,7 @@ def upload_email_file(request):
                     with transaction.atomic():
                         EmailNameData.objects.bulk_create(rows)
             except Exception as e:
+                print(f"Error processing file: {e}")
                 return HttpResponse("An error occurred while processing the file.", status=500)
 
             return redirect('upload_certificate')
@@ -777,6 +779,7 @@ def upload_certificate(request):
                     Certificate.objects.create(file=file.read(), session_id=session_id)
                 return redirect('set_coordinates')
             except Exception as e:
+                print(f"Error saving certificate: {e}")
                 return HttpResponse("An error occurred while uploading the certificate.", status=500)
     else:
         form = UploadCertificateForm()
@@ -794,16 +797,21 @@ def set_coordinates(request):
 
         # Convert PDF to an image for display
         pdf_data = bytes(certificate.file)
-        pdf_document = fitz.open(stream=pdf_data, filetype="pdf")
-        page = pdf_document[0]
-        pix = page.get_pixmap()
-        image_data = pix.tobytes("png")
-        certificate_image_data = base64.b64encode(image_data).decode('utf-8')
+        images = convert_from_path(io.BytesIO(pdf_data))
+        img = images[0]
 
-        certificate_width = pix.width
-        certificate_height = pix.height
+        # Convert the image to base64
+        buffer = BytesIO()
+        img.save(buffer, format="PNG")
+        certificate_image_data = base64.b64encode(buffer.getvalue()).decode('utf-8')
+
+        certificate_width = img.width
+        certificate_height = img.height
     except Certificate.DoesNotExist:
         return HttpResponse("Certificate not found for this session.", status=404)
+    except Exception as e:
+        print(f"Error processing certificate: {e}")
+        return HttpResponse("An error occurred while processing the certificate.", status=500)
 
     if request.method == 'POST':
         try:
@@ -823,6 +831,7 @@ def set_coordinates(request):
                 )
             return redirect('send_emails')
         except Exception as e:
+            print(f"Error saving coordinates: {e}")
             return HttpResponse("An error occurred while saving the coordinates.", status=500)
 
     return render(request, 'set_coordinates.html', {
@@ -838,31 +847,24 @@ def hex_to_rgb(hex_color):
     return tuple(int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
 
 
-def add_name_to_certificate(certificate_binary, name, x, y, font_size, font_color, font_name="Helvetica"):
-    """Add a name to a certificate PDF at specified coordinates."""
+def add_name_to_certificate(certificate_binary, name, x, y, font_size, font_color):
+    """Add a name to a certificate image at specified coordinates."""
     try:
-        reader = PdfReader(BytesIO(certificate_binary))
-        writer = PdfWriter()
+        # Load the image using Pillow
+        image = Image.open(BytesIO(certificate_binary))
+        draw = ImageDraw.Draw(image)
+        
+        # Choose a font and size (use default font for simplicity)
+        font = ImageFont.load_default()  # Replace with a specific font if needed
+        rgb_color = hex_to_rgb(font_color)
 
-        # Create a new PDF for adding the name
-        packet = BytesIO()
-        can = canvas.Canvas(packet, pagesize=(reader.pages[0].mediaBox[2], reader.pages[0].mediaBox[3]))
-        can.setFont(font_name, font_size)
-        can.setFillColorRGB(*[c / 255 for c in font_color])
-        can.drawString(x, y, name)
-        can.save()
-        packet.seek(0)
-
-        # Overlay the text onto the original PDF
-        overlay_pdf = PdfReader(packet)
-        page = reader.pages[0]
-        page.merge_page(overlay_pdf.pages[0])
-
-        # Save the output
-        output = BytesIO()
-        writer.add_page(page)
-        writer.write(output)
-        return output.getvalue()
+        # Draw the text on the image
+        draw.text((x, y), name, font=font, fill=rgb_color)
+        
+        # Save the modified image to a buffer
+        buffer = BytesIO()
+        image.save(buffer, format="PNG")
+        return buffer.getvalue()
     except Exception as e:
         print(f"Error adding name to certificate: {e}")
         raise
@@ -872,7 +874,7 @@ def add_name_to_certificate(certificate_binary, name, x, y, font_size, font_colo
 def send_email_batch(emails_data, certificate_binary, coordinate):
     for recipient in emails_data:
         font_color_rgb = hex_to_rgb(coordinate.font_color)
-        modified_pdf_data = add_name_to_certificate(
+        modified_image_data = add_name_to_certificate(
             certificate_binary=certificate_binary,
             name=recipient.name,
             x=coordinate.x,
@@ -887,7 +889,7 @@ def send_email_batch(emails_data, certificate_binary, coordinate):
             'noreply@example.com',
             [recipient.email]
         )
-        email.attach('certificate.pdf', modified_pdf_data, 'application/pdf')
+        email.attach('certificate.png', modified_image_data, 'image/png')
         email.send()
 
 
