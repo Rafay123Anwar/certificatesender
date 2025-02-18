@@ -61,6 +61,5 @@ openpyxl==3.1.5
 reportlab == 4.2.5
 PyPDF2 == 3.0.1
 psycopg2-binary==2.9.9
-# fitz  # PyMuPDF (fitz is used for PDF processing)
-concurrent.futures  # For using ThreadPoolExecutor, though this is part of Python’s standard library (no need to add it)
+# fitz  # PyMuPDF (fitz is used for PDF processing)  # For using ThreadPoolExecutor, though this is part of Python’s standard library (no need to add it)
 fitz==0.0.1.dev2
