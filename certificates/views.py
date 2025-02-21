@@ -88,7 +88,7 @@ def set_coordinates(request):
         image_data = base64.b64encode(pix.tobytes("png")).decode('utf-8')
 
         if request.method == 'POST':
-            x, y = float(request.POST.get('x')), float(request.POST.get('y')) - 9
+            x, y = float(request.POST.get('x')), float(request.POST.get('y'))
             font_size = int(request.POST.get('fontSize'))
             font_color = request.POST.get('fontColor')
 
