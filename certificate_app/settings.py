@@ -92,10 +92,10 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',  # Use PostgreSQL database engine
         'NAME': 'postgres',                        # Database name
-        'USER': 'postgres.smnozkqfpomsbfdovhmp',                        # Username
-        'PASSWORD': 'Rafayanwerr',            # Password
+        'USER': 'postgres.prusullukkdabudqqlft',                        # Username
+        'PASSWORD': 'Projects@1234',            # Password
         'HOST': 'aws-0-ap-southeast-1.pooler.supabase.com',  # Host
-        'PORT': '5432',                            # Port
+        'PORT': '6543',                            # Port
     }
 }
 
@@ -160,3 +160,4 @@ STATIC_ROOT = os.path.join(BASE_DIR,'staticfiles_build','static')
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
+
